@@ -1,19 +1,5 @@
 using EzXML
 f = "lex.cex"
-lines = readlines(f)
-
-failures = []
-for (i, ln) in enumerate(lines[2:50])
-    txt = string("<shell>", split(ln, "|")[3], "</shell>")
-    @info(i +1)
-    try
-        doc = parsexml("<wrapper>" * txt * "</wrapper>")
-        @info("Suceeded on line $(i + 1)")
-    catch e
-        push!(failures, i + 1)
-        @warn("Failed at line $(i +1): ", txt)
-    end
-end
 
 function reportall(lineslist)
     failureindices = []
@@ -29,9 +15,15 @@ function reportall(lineslist)
     failureindices
 end
 
+
+
+lines = readlines(f)
 fails = reportall(lines[2:end])
 fails[1]
+
+
 function sample(n)
+    @info("Sampling line $(n)...")
     sampleline = split(lines[n], "|")[3]
     sampleentry = string("<shell>", sampleline, "</shell>")
     try
@@ -42,6 +34,5 @@ function sample(n)
     end
 end
 
-sample(210)
+sample(558)
 
-lines[162]
