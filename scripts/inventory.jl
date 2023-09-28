@@ -1,14 +1,44 @@
 using EzXML
 f = joinpath(pwd(), "src", "lex-wellformed.cex")
-lines = readlines(f)
+# Skip header:
+lines = readlines(f)[2:end]
 
-function inventorynames(lineslist)
-    elementnames = []
-    for ln in lineslist
-        txt = string("<wrapper>", split(ln, "|")[3], "</wrapper>")
-        doc = parsexml(txt)
-    end
+xml = map(lines) do ln
+    "<x>" *  split(ln, "|")[3] * "</x>"
 end
 
+nd = xml[1] |> parsexml |> root
 
-inventorynames(lines)
+
+
+function inventorynames(n::EzXML.Node, namelist = String[])
+    @info("Inventory node $(n.name) with list $(namelist) and type ELEMENT ==  $(n.type == 1)")
+    newnames = namelist
+    if n.type == EzXML.ELEMENT_NODE
+        @info("IT's a node")
+        if in(nd.name, namelist)
+        else
+            @info("New element name $(nd.name)")
+            push!(newnames, nd.name)
+            @info("Add name to list $(newnames)")
+            
+            children = elements(n)
+      
+            for c in children
+                @info("recurse to child $(c.name)")
+                newnames = inventorynames(c, newnames)
+            end
+        end
+    end
+    newnames
+end
+
+inventorynames(nd)
+
+
+
+
+
+
+
+
