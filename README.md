@@ -19,16 +19,16 @@ The following XML elements the source document are taken into consideration in f
 
 
 - `bdbheb`. Marks term in Biblical Hebrew.
-- `highlight`
-- `sup`
-- `b`
-- `highlightword`
-- `ref`
+- `highlight` -> `*`
+- `sup` rm
+- `b` -> `**`
+- `highlightword` -> `**`
+- `ref` -> ?
 - `bdbarc`. Marks term in Biblical Aramaic.
-- `checkingNeeded`
-- `transliteration`
-- `grk`
+- `checkingNeeded` Removed in md.
+- `transliteration`  -> `*`
+- `grk` rm
 - `sub`
-- `wrongReferenceRemoved`
+- `wrongReferenceRemoved`. Removed in md.
 - `big`. Font designation.  Removed in Markdown.
-- `u`
+- `u` rm

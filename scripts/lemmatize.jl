@@ -7,8 +7,6 @@ f = joinpath(pwd(), "src", "lex-wellformed.cex")
 # Skip header:
 lines = readlines(f)[2:end]
 
-
-
 hebrew_lemma = r"\|([IV., ]*)<bdbheb>([^<]+)</bdbheb>[, ]*"
 aramaic_lemma= r"\|([\[IV., ]*)<bdbarc>([^<]+)</bdbarc>[, ]*"
 
