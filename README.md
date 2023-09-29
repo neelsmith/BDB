@@ -25,5 +25,5 @@ The following XML elements the source document are taken into consideration in f
 - `grk`
 - `sub`
 - `wrongReferenceRemoved`
-- `big`
+- `big`. Font designation.  Removed in Markdown.
 - `u`
