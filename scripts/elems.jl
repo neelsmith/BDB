@@ -1,3 +1,8 @@
+#=
+Utility script to identify XML fragments that are not well formed.
+
+Now that the source document has been reduced to a series of well-formed XML fragments, this script is no longer need.
+=#
 using EzXML
 f = "lex.cex"
 
@@ -6,7 +11,7 @@ function reportall(lineslist)
     for (i, ln) in enumerate(lineslist)
         txt = string("<shell>", split(ln, "|")[3], "</shell>")
         try
-            doc = parsexml("<wrapper>" * txt * "</wrapper>")
+            doc = parsexml(txt)
         catch e
             push!(failureindices, i + 1)
             @warn("Failed at line $(i +1)")
