@@ -7,7 +7,7 @@ f = joinpath(pwd(), "src", "lex-wellformed.cex")
 # Skip header:
 lines = readlines(f)[2:end]
 
-lemma_re = r"\|<bdbheb>([^<]+)</bdbheb>[, ]*"
+lemma_re = r"\|([IV., ]*)<bdbheb>([^<]+)</bdbheb>[, ]*"
 
 
 function missinglemma(rawlines)

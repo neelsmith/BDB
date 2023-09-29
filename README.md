@@ -13,13 +13,13 @@ Data in this repository are dervived from the text available from [this github r
 The following XML elements the source document are taken into consideration in formatting Markdown:
 
 
-- `bdbheb`
+- `bdbheb`. Marks term in Biblical Hebrew.
 - `highlight`
 - `sup`
 - `b`
 - `highlightword`
 - `ref`
-- `bdbarc`
+- `bdbarc`. Marks term in Biblical Aramaic.
 - `checkingNeeded`
 - `transliteration`
 - `grk`
