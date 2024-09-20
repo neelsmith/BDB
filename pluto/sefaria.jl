@@ -4,6 +4,16 @@
 using Markdown
 using InteractiveUtils
 
+# This Pluto notebook uses @bind for interactivity. When running this notebook outside of Pluto, the following 'mock version' of @bind gives bound variables a default value (instead of an error).
+macro bind(def, element)
+    quote
+        local iv = try Base.loaded_modules[Base.PkgId(Base.UUID("6e696c72-6542-2067-7265-42206c756150"), "AbstractPlutoDingetjes")].Bonds.initial_value catch; b -> missing; end
+        local el = $(esc(element))
+        global $(esc(def)) = Core.applicable(Base.get, el) ? Base.get(el) : iv(el)
+        el
+    end
+end
+
 # ╔═╡ 12c54c07-f2ef-427c-90ab-c1662fc07a25
 begin
 	using PlutoUI
@@ -13,11 +23,28 @@ begin
 	md"""*Unhide this cell to see the Julia environment*."""
 end
 
+# ╔═╡ 7782fefc-7774-11ef-25bf-1714acd3d1c1
+md"""# Simple examples using Sefaria APIs"""
+
 # ╔═╡ 52088b63-d040-4bf9-b101-7da875a85fc8
 TableOfContents()
 
-# ╔═╡ 7782fefc-7774-11ef-25bf-1714acd3d1c1
-md"""# Simple examples using Sefaria APIs"""
+# ╔═╡ ae9ff8c9-6076-4f25-a0b6-92c6842cd670
+md"""## Selected APIs
+
+"""
+
+# ╔═╡ 5bb31e23-7095-4ada-ad60-ad165c49eed5
+textapi = "https://www.sefaria.org/api/v3/texts/"
+
+# ╔═╡ 90558f24-0f01-45de-b978-640e0bc3884e
+indexapi = "https://www.sefaria.org/api/v2/raw/index/"
+
+# ╔═╡ 0d47f25d-de13-4966-b6de-c7af1c79993f
+calendarapi = "https://www.sefaria.org/api/calendars"
+
+# ╔═╡ 57720510-8d19-4f1e-a7bb-ea09da43b90e
+lexiconapi = "https://www.sefaria.org/api/words/"
 
 # ╔═╡ 170fac20-1b41-4674-ab58-862e89f4e157
 md"""## Utilities"""
@@ -33,57 +60,156 @@ function parse_url(u)
    end
 
 # ╔═╡ a36e4504-f4b2-4b59-8cb6-7e38d1c409d0
-"""Get the day's portion."""
-function parsha_chapters()
-	json = parse_url("https://www.sefaria.org/api/calendars")
+"""Get Sefaria's full JSON data for today's portion."""
+function parsha_json()
+	json = parse_url(calendarapi)
 	portion = filter(json.calendar_items) do i
 	    i.title.en == "Parashat Hashavua"
 	end
 	if length(portion) != 1
-		# throw an error
+		# maybe throw an error?
+		@warn("Should have found 1 portion but got $(length(portion))")
 		nothing
 	else
-		txt = "https://www.sefaria.org/api/v3/texts/" * HTTP.escapeuri(portion[1].ref)
+		txt = textapi * HTTP.escapeuri(portion[1].ref)
 		parse_url(txt)
 	end
 end
 
+# ╔═╡ 536fa218-23f4-457d-bd41-caf2e0fbb15c
+"""Get the text of today's portion."""
+function parsha_text()
+	json = parsha_json().versions
+	text_data = map(v -> v.text, json)
+	if length(text_data) == 1
+		text_data[1]
+	else
+		@debug("Something went wrong: got the wrong number of elements when retrieving portion text.")
+		nothing
+	end
+end
+
+# ╔═╡ 88587a02-cd52-4cd6-ba66-30b5ec9ca7f5
+"""Get the text of today's portion."""
+function parsha_text_html()
+	html_out = []
+	for chapt in parsha_text()
+		push!(html_out, "<p><b>Chapter</b></p><ol>")
+		for verse in chapt
+			push!(html_out, "<li>", verse, "</li>")
+		end
+		push!(html_out, "</ol>")
+	end
+	join(html_out,"\n")
+end
+
 # ╔═╡ e4273ace-98a2-4ce3-9baa-c7f62172a42e
-md"""## Find the Parashat HaShavua"""
+md"""## Find the Parashat HaShavua (`https://www.sefaria.org/api/calendars`)"""
 
-# ╔═╡ e963fcb1-4dd9-42d0-9aa6-a84341968a8b
-map(v -> v.text, parsha_chapters().versions)
+# ╔═╡ 9811387c-002d-4249-882d-1c1be26af86b
+md"""The full JSON data set:"""
 
-# ╔═╡ 56f7c5ed-7079-4c4c-b3ff-c863dc5bfe5b
-calurl = "https://www.sefaria.org/api/calendars"
+# ╔═╡ 09813b85-b24f-4912-ae79-907b7909f4ec
+parsha = parsha_json()
 
-# ╔═╡ 4afb4df8-12ae-4323-a863-4cc5ff88cb95
-parsha_chapters().versions[1]
+# ╔═╡ a68e81c9-bb91-4c43-b6ca-0c969f0645bf
+parsha.versions[1] |> println
 
+# ╔═╡ a3821c5e-e130-4709-9968-6c5100b348bf
+parsha.spanningRefs
+
+# ╔═╡ b4aff48c-ccaf-4582-86e8-43d485896c51
+parsha.sections
+
+# ╔═╡ e1cdc87f-e6f2-4fba-8607-d0e2106125ad
+parsha.toSections
+
+# ╔═╡ bca1f4ef-8344-4b39-b79f-9ae42131a0d9
+parsha.ref
+
+# ╔═╡ 272bea93-d5d5-48c1-a15f-c0ef194e55e6
+parsha.heRef
+
+# ╔═╡ 2ecf16f4-1614-49de-85cc-c924c74a78e7
+parsha |> println
+
+# ╔═╡ 2a04fdbf-93ac-4a1e-a4b1-0086188a8c9c
+md"A 2-tier vector of strings (chapters, verses):"
+
+# ╔═╡ e4be98c2-4f1f-4fbd-92d8-602fa477af6b
+parsha_text()
+
+# ╔═╡ e41bb2a7-0cc3-4680-8f63-2471caadb116
+md"""The text wrapped in HTML: `parsha_text_html()` (*Show output*: $(@bind showportion CheckBox()))"""
+
+# ╔═╡ 90269a39-3415-466d-b047-fde83cf3e43b
+if showportion
+	"<hr/><h4>Portion for today</h4>" * parsha_text_html() |> HTML
+end
+
+# ╔═╡ 6984bef4-eacd-44a9-ad18-88a6c86f0911
+parsha_json().versions[1]
 
 # ╔═╡ d7186fa3-a689-4280-95be-a9ab44493da5
-md"""## Index structure"""
+md"""## Index structure (`https://www.sefaria.org/api/v2/raw/index`)"""
 
 # ╔═╡ a3ed09c6-2247-4fd6-96c6-6c70227772a0
-idxurl = "https://www.sefaria.org/api/v2/raw/index/" * HTTP.escapeuri("Genesis")
+idxurl = "https://www.sefaria.org/api/v2/raw/index/" * HTTP.escapeuri("Deuteronomy")
 
 # ╔═╡ 6c2f205a-b005-42cf-bf75-c75710000f17
-genidx = parse_url(idxurl)
+bookidx = parse_url(idxurl)
 
 
 # ╔═╡ c7b785d7-8582-448c-afda-dfc98d293e93
-genidx.schema.titles[18]
+bookidx.schema.titles[end]
 
 # ╔═╡ 9f90a714-3834-473c-8c37-68983b68ab15
-genidx.schema.match_templates
+bookidx.schema.match_templates
 
 # ╔═╡ 81c38cdb-ae2b-4af0-9283-c70e31a328e0
-genidx.schema.lengths
+bookidx.schema.lengths
 
 # ╔═╡ 98306465-cbd5-46a0-b511-4f507755a3f7
-map(genidx.schema.sectionNames) do n
+map(bookidx.schema.sectionNames) do n
 	n
 end
+
+# ╔═╡ f29e07a2-67a3-4abf-9459-89290c22b46e
+bookidx.schema
+
+# ╔═╡ dd235d02-cd95-470b-8b04-f08e741501a3
+md""" ## Maybe version structure? `https://www.sefaria.org/api/v3/texts`"""
+
+# ╔═╡ 835da86b-2c21-4b24-9ac0-859bef101236
+sampref = "deuteronomy:29.1-29.8" |> HTTP.escapeuri
+
+# ╔═╡ 3415b8ea-a517-4c82-8e72-8c9f796791d3
+ sampjson = (textapi * sampref |> parse_url)
+
+# ╔═╡ db74a298-54f1-4b07-9b68-320f0c3e9c0a
+sampversions = sampjson.versions
+
+# ╔═╡ 8d99410f-70ec-4a9c-b459-879b10353577
+sampversions[1]
+
+# ╔═╡ 9c591453-2722-477e-9510-32127396e197
+sampverse = "deuteronomy:29.7-29.8"
+
+# ╔═╡ f7b43f44-b326-4170-bc12-1387033a7c0f
+versejson = (textapi * sampverse |> parse_url)
+
+# ╔═╡ 612a34ce-8292-4805-905e-ef9469f14c3d
+versetext = map(v -> v.text, versejson.versions)
+
+# ╔═╡ 7db5f75c-6fbd-4304-92d5-42186fa87baa
+tkn = split(versetext[1][2])[1]
+
+
+# ╔═╡ 0fe7364a-4d4f-4d5e-8602-33594e477ce0
+md"""## Lexicon"""
+
+# ╔═╡ 7b4ff200-1607-48c3-ad16-67e022f91241
+join(parse_url(lexiconapi * tkn)[2].content.senses,"\n") |> HTML
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -103,7 +229,7 @@ PlutoUI = "~0.7.60"
 PLUTO_MANIFEST_TOML_CONTENTS = """
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.10.4"
+julia_version = "1.10.5"
 manifest_format = "2.0"
 project_hash = "328168ab25fc5f53f7e718e64be0bd754798d21c"
 
@@ -369,9 +495,9 @@ version = "0.7.0"
 uuid = "9e88b42a-f829-5b0c-bbe9-9e923198166b"
 
 [[deps.SimpleBufferStream]]
-git-tree-sha1 = "f305871d2f381d21527c770d4788c06c097c9bc1"
+git-tree-sha1 = "874e8867b33a00e784c8a7e4b60afe9e037b74e1"
 uuid = "777ac1f9-54b0-4bf8-805c-2214025038e7"
-version = "1.2.0"
+version = "1.1.0"
 
 [[deps.Sockets]]
 uuid = "6462fe0b-24de-5631-8697-dd941f90decc"
@@ -441,7 +567,7 @@ version = "1.2.13+1"
 [[deps.libblastrampoline_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "8e850b90-86db-534c-a0d3-1478176c7d93"
-version = "5.8.0+1"
+version = "5.11.0+0"
 
 [[deps.nghttp2_jll]]
 deps = ["Artifacts", "Libdl"]
@@ -455,16 +581,34 @@ version = "17.4.0+2"
 """
 
 # ╔═╡ Cell order:
-# ╠═12c54c07-f2ef-427c-90ab-c1662fc07a25
-# ╟─52088b63-d040-4bf9-b101-7da875a85fc8
+# ╟─12c54c07-f2ef-427c-90ab-c1662fc07a25
 # ╟─7782fefc-7774-11ef-25bf-1714acd3d1c1
+# ╟─52088b63-d040-4bf9-b101-7da875a85fc8
+# ╟─ae9ff8c9-6076-4f25-a0b6-92c6842cd670
+# ╟─5bb31e23-7095-4ada-ad60-ad165c49eed5
+# ╟─90558f24-0f01-45de-b978-640e0bc3884e
+# ╟─0d47f25d-de13-4966-b6de-c7af1c79993f
+# ╟─57720510-8d19-4f1e-a7bb-ea09da43b90e
 # ╟─170fac20-1b41-4674-ab58-862e89f4e157
 # ╟─0ebc2165-d93d-4e2b-8232-f32a7126ce29
-# ╠═a36e4504-f4b2-4b59-8cb6-7e38d1c409d0
+# ╟─a36e4504-f4b2-4b59-8cb6-7e38d1c409d0
+# ╟─536fa218-23f4-457d-bd41-caf2e0fbb15c
+# ╟─88587a02-cd52-4cd6-ba66-30b5ec9ca7f5
 # ╟─e4273ace-98a2-4ce3-9baa-c7f62172a42e
-# ╠═e963fcb1-4dd9-42d0-9aa6-a84341968a8b
-# ╠═56f7c5ed-7079-4c4c-b3ff-c863dc5bfe5b
-# ╠═4afb4df8-12ae-4323-a863-4cc5ff88cb95
+# ╟─9811387c-002d-4249-882d-1c1be26af86b
+# ╟─09813b85-b24f-4912-ae79-907b7909f4ec
+# ╠═a68e81c9-bb91-4c43-b6ca-0c969f0645bf
+# ╠═a3821c5e-e130-4709-9968-6c5100b348bf
+# ╠═b4aff48c-ccaf-4582-86e8-43d485896c51
+# ╠═e1cdc87f-e6f2-4fba-8607-d0e2106125ad
+# ╠═bca1f4ef-8344-4b39-b79f-9ae42131a0d9
+# ╠═272bea93-d5d5-48c1-a15f-c0ef194e55e6
+# ╠═2ecf16f4-1614-49de-85cc-c924c74a78e7
+# ╟─2a04fdbf-93ac-4a1e-a4b1-0086188a8c9c
+# ╠═e4be98c2-4f1f-4fbd-92d8-602fa477af6b
+# ╟─e41bb2a7-0cc3-4680-8f63-2471caadb116
+# ╟─90269a39-3415-466d-b047-fde83cf3e43b
+# ╠═6984bef4-eacd-44a9-ad18-88a6c86f0911
 # ╟─d7186fa3-a689-4280-95be-a9ab44493da5
 # ╠═a3ed09c6-2247-4fd6-96c6-6c70227772a0
 # ╠═6c2f205a-b005-42cf-bf75-c75710000f17
@@ -472,5 +616,17 @@ version = "17.4.0+2"
 # ╠═9f90a714-3834-473c-8c37-68983b68ab15
 # ╠═81c38cdb-ae2b-4af0-9283-c70e31a328e0
 # ╠═98306465-cbd5-46a0-b511-4f507755a3f7
+# ╠═f29e07a2-67a3-4abf-9459-89290c22b46e
+# ╟─dd235d02-cd95-470b-8b04-f08e741501a3
+# ╠═835da86b-2c21-4b24-9ac0-859bef101236
+# ╠═db74a298-54f1-4b07-9b68-320f0c3e9c0a
+# ╠═8d99410f-70ec-4a9c-b459-879b10353577
+# ╠═3415b8ea-a517-4c82-8e72-8c9f796791d3
+# ╠═9c591453-2722-477e-9510-32127396e197
+# ╠═f7b43f44-b326-4170-bc12-1387033a7c0f
+# ╠═612a34ce-8292-4805-905e-ef9469f14c3d
+# ╠═7db5f75c-6fbd-4304-92d5-42186fa87baa
+# ╠═0fe7364a-4d4f-4d5e-8602-33594e477ce0
+# ╠═7b4ff200-1607-48c3-ad16-67e022f91241
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
